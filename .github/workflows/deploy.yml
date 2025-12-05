@@ -6,7 +6,6 @@ on:
 
 env:
   IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/jupyter-book:${{ github.sha }}
-  BASE_URL: /${{ github.event.repository.name }}
 
 permissions:
   contents: read
@@ -19,13 +18,14 @@ concurrency:
 
 jobs:
   # -------------------------
-  # 1) Build Jupyter Book
+  # 1) Build for GitHub Pages
   # -------------------------
-  build-book:
+  build-pages:
     runs-on: ubuntu-latest
+    env:
+      BASE_URL: "/jupyter-book/"
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 18.x
@@ -33,29 +33,39 @@ jobs:
       - name: Install Jupyter Book
         run: npm install -g jupyter-book
 
-      - name: Build HTML
+      - name: Build Pages HTML
         run: jupyter-book build --html
 
-      - name: Upload artifact for later stages
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: html-build
+          name: pages-build
           path: ./_build/html
 
   # -------------------------
-  # 2) Build Docker image
+  # 2) Build for Cloud (Docker)
   # -------------------------
-  build-docker:
-    needs: build-book
+  build-cloud:
     runs-on: ubuntu-latest
+    env:
+      BASE_URL: ""
     steps:
       - uses: actions/checkout@v4
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/setup-node@v4
         with:
-          name: html-build
-          path: _build/html
+          node-version: 18.x
+
+      - name: Install Jupyter Book
+        run: npm install -g jupyter-book
+
+      - name: Build Cloud HTML
+        run: jupyter-book build --html
+
+      - name: Prepare Docker context
+        run: |
+          mkdir docker-build
+          cp -r _build/html docker-build/html
+          cp Dockerfile docker-build/
 
       - uses: docker/login-action@v2
         with:
@@ -65,15 +75,15 @@ jobs:
       - name: Build & Push Docker Image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./docker-build
           push: true
           tags: ${{ env.IMAGE_NAME }}
 
   # -------------------------
-  # 3) Deploy to Cloud (Docker)
+  # 3) Deploy to Cloud
   # -------------------------
   deploy-cloud:
-    needs: build-docker
+    needs: build-cloud
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
@@ -92,7 +102,7 @@ jobs:
   # 4) Deploy to GitHub Pages
   # -------------------------
   deploy-pages:
-    needs: build-book
+    needs: build-pages
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -101,14 +111,13 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: html-build
-          path: _build/html
+          name: pages-build
+          path: ./_build/html
 
       - name: Upload artifact to GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
           path: "./_build/html"
-
       - name: Deploy to Pages
         id: deployment
         uses: actions/deploy-pages@v4

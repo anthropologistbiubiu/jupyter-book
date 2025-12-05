@@ -1,0 +1,2 @@
+html:
+  baseurl: "{{ env.BASE_URL }}"
