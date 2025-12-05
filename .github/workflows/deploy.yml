@@ -59,7 +59,6 @@ jobs:
 
       - name: Install Jupyter Book
         run: npm install -g jupyter-book
-
       - name: Build Cloud HTML
         run: jupyter-book build --html
 
@@ -100,7 +99,6 @@ jobs:
             docker stop jupyter-book || true
             docker rm   jupyter-book || true
             docker run -d --name jupyter-book -p 8888:80 ${{ env.IMAGE_NAME }}
-
   # -------------------------
   # 4) Deploy to GitHub Pages
   # -------------------------
