@@ -65,8 +65,9 @@ jobs:
 
       - name: Prepare Docker context
         run: |
+          rm -rf docker-build
           mkdir docker-build
-          cp -r _build/html/* docker-build/
+          cp -r _build/html docker-build/
           cp Dockerfile docker-build/
           cp nginx.conf docker-build/
       - uses: docker/login-action@v2
