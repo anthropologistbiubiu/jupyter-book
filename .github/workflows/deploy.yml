@@ -6,6 +6,7 @@ on:
 
 env:
   IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/jupyter-book:${{ github.sha }}
+  BASE_URL: /${{ github.event.repository.name }}
 
 permissions:
   contents: read
