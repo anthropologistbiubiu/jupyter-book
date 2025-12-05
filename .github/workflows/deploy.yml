@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BASE_URL: "/jupyter-book/"
+      run: jupyter-book build --html --config _config_pages.yml
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -49,6 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BASE_URL: ""
+      run: jupyter-book build --html --config _config_cloud.yml
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
